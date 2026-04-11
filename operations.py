@@ -13,3 +13,25 @@ def view_students():
             
         cursor.close()
         conn.close()
+
+
+def login(email_or_user, password, role):
+    conn = get_connection()
+    if conn:
+        cursor = conn.cursor()
+        if role == "student":
+            query = "SELECT student_id, full_name FROM Students WHERE email = %s AND password = %s"
+        else:
+            # Check if these column names match your Workbench table exactly!
+            query = "SELECT admin_id, username FROM Admins WHERE username = %s AND password = %s"
+            
+        cursor.execute(query, (email_or_user, password))
+        user = cursor.fetchone()
+        
+        # DEBUG: Remove this after it works
+        print(f"DEBUG: Found user: {user}") 
+        
+        cursor.close()
+        conn.close()
+        return user 
+    return None
