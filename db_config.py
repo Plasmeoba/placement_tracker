@@ -5,7 +5,7 @@ def get_connection():
         conn = mysql.connector.connect(
             host='localhost',
             user='root',
-            password='root123', # ENTER YOUR WORKBENCH PASSWORD HERE
+            password='Your password', # ENTER YOUR WORKBENCH PASSWORD HERE
             database='placement_tracker' # MUST MATCH WORKBENCH EXACTLY
         )
         return conn
