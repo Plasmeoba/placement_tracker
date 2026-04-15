@@ -142,16 +142,14 @@ def get_login_summary(student_id):
 def view_students():
     conn = get_connection()
     if conn:
-        cursor = conn.cursor()
+        # dictionary=True makes it easy for Streamlit to read headers
+        cursor = conn.cursor(dictionary=True) 
         cursor.execute("SELECT student_id, full_name, cgpa, branch FROM Students")
         results = cursor.fetchall()
-    
-        print("\n--- Student List ---")
-        for row in results:
-            print(f"ID: {row[0]} | Name: {row[1]} | CGPA: {row[2]} | Branch: {row[3]}")
-            
         cursor.close()
         conn.close()
+        return results # Send the list back to app.py
+    return []
 
 
 
@@ -161,19 +159,12 @@ def add_student(name, email, password, cgpa, branch):
     conn = get_connection()
     if conn:
         cursor = conn.cursor()
-        query = """
-        INSERT INTO Students (full_name, email, password, cgpa, branch)
-        VALUES (%s, %s, %s, %s, %s)
-        """
+        query = "INSERT INTO Students (full_name, email, password, cgpa, branch) VALUES (%s, %s, %s, %s, %s)"
         cursor.execute(query, (name, email, password, cgpa, branch))
         conn.commit()
-        print("✅ Student added successfully!")
-
         cursor.close()
         conn.close()
 
-
-# 🔹 Delete Student
 def delete_student(student_id):
     conn = get_connection()
     if conn:
@@ -181,56 +172,46 @@ def delete_student(student_id):
         query = "DELETE FROM Students WHERE student_id = %s"
         cursor.execute(query, (student_id,))
         conn.commit()
-        print("🗑️ Student deleted successfully!")
-
         cursor.close()
         conn.close()
 
 
 # 🔹 Stored Procedure Call
+# Updated Top Students Function
 def get_top_students(min_cgpa):
     conn = get_connection()
+    students_list = []
     if conn:
-        cursor = conn.cursor()
-
+        cursor = conn.cursor(dictionary=True)
         try:
             cursor.callproc('GetTopStudents', [min_cgpa])
-
-            print("\n--- Top Students ---")
             for result in cursor.stored_results():
-                rows = result.fetchall()
-                for row in rows:
-                    print(row)
-
+                students_list = result.fetchall()
         except Exception as e:
-            print("Error running stored procedure:", e)
+            print("Error:", e)
+        finally:
+            cursor.close()
+            conn.close()
+    return students_list
 
-        cursor.close()
-        conn.close()
-
-
-# Procedure Call for Eligibility (Uses your GetEligibleStudents)
+# Updated Eligibility Report Function
 def run_eligibility_report(job_id):
     conn = get_connection()
+    eligible_list = []
     if conn:
-        cursor = conn.cursor()
+        cursor = conn.cursor() # Keep as standard cursor for simpler indexing
         try:
-            # This calls YOUR specific procedure name
             cursor.callproc('GetEligibleStudents', [job_id])
-
-            print(f"\n--- Eligibility Results for Job {job_id} ---")
-            # Since your procedure 'SELECTs' results inside a loop, 
-            # we use stored_results() to catch them all.
             for result in cursor.stored_results():
                 rows = result.fetchall()
                 for row in rows:
-                    print(f"👉 {row[0]}")
-
+                    eligible_list.append(row[0]) # Just getting the names
         except Exception as e:
-            print("Error running eligibility procedure:", e)
-
-        cursor.close()
-        conn.close()
+            print("Error:", e)
+        finally:
+            cursor.close()
+            conn.close()
+    return eligible_list
 
 
 
